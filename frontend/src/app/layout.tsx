@@ -9,7 +9,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const barlow = Barlow_Condensed({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-barlow" });
 
-import { SITE_URL } from "@/lib/site";
+import { PREVIEW_MODE, SITE_URL } from "@/lib/site";
+import { PreviewBanner } from "@/components/PreviewBanner";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -20,6 +21,8 @@ export const metadata: Metadata = {
   description:
     "Family-run independent garage in Beeston, Nottingham since 1982. Servicing, MOTs, diagnostics, air conditioning and repairs for all makes – warranty safe.",
   openGraph: { type: "website", locale: "en_GB", siteName: "Jim Steel Garage Services" },
+  // Keep the preview out of search results so it never competes with (or impersonates) the live site.
+  robots: PREVIEW_MODE ? { index: false, follow: false } : undefined,
 };
 
 export const viewport: Viewport = { themeColor: "#2e3092" };
@@ -64,13 +67,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         >
           Skip to content
         </a>
+        {PREVIEW_MODE && <PreviewBanner />}
         <Header />
         <main id="main" className="flex-1">
           {children}
         </main>
         <Footer />
         <MobileActionBar />
-        <LocalBusinessJsonLd />
+        {!PREVIEW_MODE && <LocalBusinessJsonLd />}
       </body>
     </html>
   );
