@@ -1,0 +1,52 @@
+# Render Blueprint – Django API + Postgres. Deploy via Render dashboard: New → Blueprint → this repo.
+services:
+  - type: web
+    name: jimsteel-api
+    runtime: python
+    plan: starter            # persistent disks need a paid instance
+    region: frankfurt
+    rootDir: backend
+    buildCommand: ./build.sh
+    startCommand: ./start.sh
+    healthCheckPath: /api/site/
+    disk:
+      name: media
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: jimsteel-db
+          property: connectionString
+      - key: MEDIA_ROOT
+        value: /var/data/media
+      - key: ENQUIRY_NOTIFY_EMAILS
+        value: service@jimsteelgarages.co.uk
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false          # you'll be asked for these when creating the Blueprint
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+      # Fill these in once the Vercel URL is known:
+      - key: PUBLIC_API_URL
+        sync: false          # e.g. https://jimsteel-api.onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false          # e.g. https://jimsteel.vercel.app
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false          # e.g. https://jimsteel-api.onrender.com
+      - key: NEXT_REVALIDATE_URL
+        sync: false          # e.g. https://jimsteel.vercel.app/api/revalidate
+      - key: REVALIDATE_SECRET
+        sync: false          # same value as on Vercel
+
+databases:
+  - name: jimsteel-db
+    plan: basic-256mb
+    region: frankfurt
+    databaseName: jimsteel
+    user: jimsteel
