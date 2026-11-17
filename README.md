@@ -60,3 +60,26 @@ are set in the backend env (same secret in the frontend), saving anything in the
 cd backend && .venv/bin/python manage.py test
 cd frontend && npm run lint && npm run build
 ```
+
+## Deploying on Vercel (frontend + backend)
+
+Two Vercel projects from this repo: **Root Directory `backend`** (Django) and **Root Directory `frontend`** (Next.js).
+
+**Backend project**
+1. *Storage* tab: connect **Neon Postgres** (sets `DATABASE_URL`) and a **Blob** store (sets `BLOB_READ_WRITE_TOKEN`; images then live in Blob).
+2. Environment variables: `DJANGO_SECRET_KEY` (`openssl rand -hex 32`), `REVALIDATE_SECRET`,
+   `NEXT_REVALIDATE_URL=https://<frontend>.vercel.app/api/revalidate`, optional SMTP vars.
+3. Load the database once from your machine (Vercel doesn't run management commands):
+   ```bash
+   cd backend
+   npx vercel link && npx vercel env pull .env.vercel --environment=production
+   set -a && source .env.vercel && set +a
+   .venv/bin/python manage.py migrate
+   .venv/bin/python manage.py seed_content      # uploads images to Blob
+   .venv/bin/python manage.py createsuperuser
+   ```
+
+**Frontend project**: `API_URL=https://<backend>.vercel.app`, `SITE_URL`, `REVALIDATE_SECRET` (same value).
+
+Limits to know: Vercel function requests max 4.5 MB (admin image uploads above that fail), and the
+enquiry rate limit is per function instance. `render.yaml` remains as an alternative backend host.

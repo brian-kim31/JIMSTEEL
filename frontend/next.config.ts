@@ -23,6 +23,8 @@ const nextConfig: NextConfig = {
         pathname: "/media/**",
       },
       { protocol: "https", hostname: "i.ytimg.com", pathname: "/vi/**" },
+      // Uploaded images when the API stores media in Vercel Blob
+      { protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/media/**" },
     ],
     // Only needed when the Django API (and its /media) is on this machine, e.g. local dev/preview.
     dangerouslyAllowLocalIP: ["localhost", "127.0.0.1"].includes(apiUrl.hostname),

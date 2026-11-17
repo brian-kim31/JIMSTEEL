@@ -41,3 +41,24 @@ class ContentApiTests(TestCase):
         self.assertEqual(self.client.get("/api/pages/about/").json()["title"], "About Us")
         vids = self.client.get("/api/videos/?placement=home").json()
         self.assertEqual([v["youtube_id"] for v in vids], ["QFKg2cna4Xg"])
+
+
+class VercelBlobStorageTests(TestCase):
+    def test_save_url_and_exists(self):
+        from unittest import mock
+
+        from django.core.files.base import ContentFile
+
+        from config.storage import VercelBlobStorage
+        from vercel.blob import BlobNotFoundError
+
+        with mock.patch.dict("os.environ", {"BLOB_READ_WRITE_TOKEN": "vercel_blob_rw_AbC123_secret"}), \
+                mock.patch("config.storage.blob") as blob:
+            blob.head_blob.side_effect = BlobNotFoundError("missing")
+            storage = VercelBlobStorage()
+            name = storage.save("branding/logo.png", ContentFile(b"png", name="logo.png"))
+            self.assertEqual(name, "branding/logo.png")
+            args, kwargs = blob.put_blob.call_args
+            self.assertEqual(args[0], "media/branding/logo.png")
+            self.assertEqual(kwargs["content_type"], "image/png")
+            self.assertEqual(storage.url(name), "https://abc123.public.blob.vercel-storage.com/media/branding/logo.png")

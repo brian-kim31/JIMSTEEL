@@ -7,7 +7,10 @@ from . import models
 def absolute_media(field):
     if not field:
         return None
-    return f"{settings.PUBLIC_API_URL.rstrip('/')}{field.url}"
+    url = field.url
+    if url.startswith(("http://", "https://")):  # e.g. Vercel Blob
+        return url
+    return f"{settings.PUBLIC_API_URL.rstrip('/')}{url}"
 
 
 def lines(text):

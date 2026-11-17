@@ -34,4 +34,8 @@ def _ping():
 def content_changed(sender, raw=False, **kwargs):
     if raw or sender not in CONTENT_MODELS:
         return
-    transaction.on_commit(lambda: threading.Thread(target=_ping, daemon=True).start())
+    if os.environ.get("VERCEL"):
+        # Serverless functions freeze after responding, so a background thread may never run.
+        transaction.on_commit(_ping)
+    else:
+        transaction.on_commit(lambda: threading.Thread(target=_ping, daemon=True).start())

@@ -100,11 +100,22 @@ STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }
+# Vercel has no persistent disk: keep uploads in Vercel Blob when a store is connected.
+if os.environ.get("BLOB_READ_WRITE_TOKEN"):
+    STORAGES["default"] = {"BACKEND": "config.storage.VercelBlobStorage"}
+# Vercel may not run collectstatic, so let WhiteNoise serve admin assets straight from the installed apps.
+if os.environ.get("VERCEL"):
+    STORAGES["staticfiles"] = {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"}
+    WHITENOISE_USE_FINDERS = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Absolute base used to build media URLs in API responses (e.g. https://api.example.com)
-PUBLIC_API_URL = os.environ.get("PUBLIC_API_URL", "http://localhost:8000")
+PUBLIC_API_URL = os.environ.get("PUBLIC_API_URL") or (
+    f"https://{os.environ['VERCEL_PROJECT_PRODUCTION_URL']}"
+    if os.environ.get("VERCEL_PROJECT_PRODUCTION_URL")
+    else "http://localhost:8000"
+)
 
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"]
