@@ -75,9 +75,15 @@ WSGI_APPLICATION = "config.wsgi.application"
 # DATABASE_URL (e.g. Render Postgres) in production; SQLite locally.
 DATABASES = {
     "default": dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}", conn_max_age=600, conn_health_checks=True
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        # Serverless functions shouldn't hold connections open between invocations.
+        conn_max_age=0 if os.environ.get("VERCEL") else 600,
+        conn_health_checks=True,
     )
 }
+if "pooler" in os.environ.get("DATABASE_URL", ""):
+    # Neon's pooled endpoint (PgBouncer, transaction mode) doesn't support server-side cursors.
+    DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
