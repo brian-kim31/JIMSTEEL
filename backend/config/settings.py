@@ -11,11 +11,22 @@ def env_list(name, default=""):
     return [v.strip() for v in os.environ.get(name, default).split(",") if v.strip()]
 
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key-change-me")
-DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
+# On a hosting platform, default to production mode: never show debug pages to the public.
+ON_HOST = bool(os.environ.get("VERCEL") or os.environ.get("RENDER"))
+DEBUG = os.environ.get("DJANGO_DEBUG", "0" if ON_HOST else "1") == "1"
+
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+if not SECRET_KEY:
+    if not DEBUG:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured("Set the DJANGO_SECRET_KEY environment variable.")
+    SECRET_KEY = "dev-only-insecure-key"
+
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
-if os.environ.get("RENDER_EXTERNAL_HOSTNAME"):  # set automatically by Render
-    ALLOWED_HOSTS.append(os.environ["RENDER_EXTERNAL_HOSTNAME"])
+# Hostnames the platforms set automatically (Render service URL; Vercel deployment/branch/production URLs).
+for var in ("RENDER_EXTERNAL_HOSTNAME", "VERCEL_URL", "VERCEL_BRANCH_URL", "VERCEL_PROJECT_PRODUCTION_URL"):
+    if os.environ.get(var):
+        ALLOWED_HOSTS.append(os.environ[var])
 
 INSTALLED_APPS = [
     "django.contrib.admin",
